@@ -29,8 +29,8 @@ const (
 )
 
 type (
-	PromptFunc func(index int, def rune) string
-	ItemFunc   func(index int) string
+	PromptFunc func(int, rune) string
+	ItemFunc   func(int) string
 )
 
 var (

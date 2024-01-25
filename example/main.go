@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	fmt.Println("Simple print menu with index start from 0 preselected 1")
+	fmt.Println("\nSimple print menu\n with index start from 0\n preselected 1\n static prompt\n exit on typo")
 	items := []menu.ItemFunc{}
 	items = append(items, func(index int) string {
 		if index == menu.RunFunc {
@@ -25,7 +25,7 @@ func main() {
 	})
 	menu.Menu(menu.Prompt, menu.MARK, '1', false, true, items...)
 
-	fmt.Println("\n\n\nPrint menu with index start from 1 preselected from items and not static prompt")
+	fmt.Println("\n\n\nPrint menu\n with index start from 1\n preselected by items\n not static prompt\n not exit on typo\n exit on `bar`\n with custom `mark`")
 	items = []menu.ItemFunc{}
 	items = append(items, func(index int) string {
 		if index == menu.RunFunc {
@@ -50,7 +50,7 @@ func main() {
 		return fmt.Sprintf("Press %s for %s", string(def), items[index](index))
 	}, '>', 0, false, false, items...)
 
-	fmt.Println("\n\n\nPrint menu selected by cyrillic letters and prerun `foo`")
+	fmt.Println("\n\n\nPrint menu\n selected by cyrillic letters\n first run `foo`\n not exit on typo")
 	items = []menu.ItemFunc{}
 	items = append(items, func(index int) string {
 		if index == menu.RunFunc {
