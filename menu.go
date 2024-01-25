@@ -21,16 +21,17 @@ import (
 )
 
 const (
-	MENU    = "Select"
-	MARK    = '(' // default option selected rune
-	BUG     = "Ж"
-	GT      = ">"
-	RunFunc = -1
+	SELECT = "Select"
+	MARK   = "(" // default option selected rune
+	BUG    = "Ж"
+	GT     = ">"
+	MARKED = -1
+	ITEM   = -2
+	EXIT   = "\x00"
 )
 
 type (
-	PromptFunc func(int, rune) string
-	ItemFunc   func(int) string
+	MenuFunc func(int, rune) string
 )
 
 var (
@@ -40,94 +41,91 @@ var (
 
 // helper for static prompt
 func Prompt(index int, def rune) string {
-	return MENU
+	return SELECT
 }
 
 // Console menu
-func Menu(prompt PromptFunc,
-	mark, def rune,
-	keyEnter, exitOnTypo bool,
-	items ...ItemFunc) {
+func Menu(def rune, // preselected item of menu
+	keyEnter, // first run preselected menu item
+	exitOnTypo bool, // exit from menu on typo
+	items ...MenuFunc, //first item must be Prompt like
+) {
 	const (
 		ansiReset     = "\u001B[0m"
 		ansiRedBGBold = "\u001B[41m\u001B[1m"
 		ansiGreenFG   = "\u001B[32m\u001B[1m"
 	)
 	var (
-		key   keyboard.Key
-		err   error
-		r     rune
-		index = -1
+		key     keyboard.Key
+		err     error
+		pressed rune
+		index   = -1
+		mark    string
 	)
 	if os.Getenv("NO_COLOR") == "" && IsAnsi() {
 		Bug = ansiRedBGBold + BUG + ansiReset
 		Gt = ansiGreenFG + GT + ansiReset
 	}
-
+exit:
 	for {
-		newD := false
-		// search mark or set GT by index
-		for i, item := range items {
-			rs := []rune(item(i)) //get menu item. Item my use i for assign key
-			if len(rs) < 1 {
-				continue
+		// set def by index. Used for arrow key navigation
+		if index > -1 && index < len(items) {
+			def = 0
+			rs := []rune(items[index+1](index, ITEM))
+			if len(rs) > 0 {
+				def = rs[0]
 			}
-			newD = rs[0] == mark
-			if newD {
-				if len(rs) < 2 {
+		}
+		if def == 0 {
+			for i, item := range items[1:] {
+				s := item(i, MARKED) // is menu item marked?
+				if s == "" {
 					continue
 				}
-				rs = rs[1:]
-			}
-			if index > -1 { //set GT by index. Used for arrow key navigation
-				if index == i {
-					def = rs[0]
+				rs := []rune(item(i, ITEM))
+				if len(rs) < 1 {
+					continue
 				}
-			} else { //set GT by item
-				if newD {
-					def = rs[0]
-				}
+				def = rs[0]
 			}
 		}
 
 		//print menu
 		fmt.Println()
 		index = -1
-		for i, item := range items {
-			rs := []rune(item(i)) //get menu item
+		for i, item := range items[1:] {
+			rs := []rune(item(i, ITEM)) //get menu item
 			if len(rs) < 1 {
 				continue
 			}
-			m := " "
-			if rs[0] == mark { // new def
-				if len(rs) < 2 {
-					continue
-				}
-				m = string(mark)
-				rs = rs[1:]
-			}
 			if def == rs[0] {
-				m = Gt
+				mark = Gt
 				index = i
+			} else {
+				mark = item(i, MARKED)
 			}
-			fmt.Printf("%s%s\n", m, string(rs))
+			if mark == "" {
+				mark = " "
+			}
+
+			fmt.Printf("%s%s\n", mark, string(rs))
 		}
-		fmt.Print(prompt(index, def), Gt)
+		fmt.Print(items[0](index, def), Gt)
 		if keyEnter {
-			r = def
+			pressed = def
 		} else {
-			r, key, err = keyboard.GetSingleKey()
+			pressed, key, err = keyboard.GetSingleKey()
 			if err != nil {
 				fmt.Println(Bug)
 				return
 			}
 			if key == keyboard.KeyEnter {
-				r = def
+				pressed = def
 			}
 		}
 		keyEnter = false
-		def = r
-		if r == 0 {
+		def = pressed
+		if pressed == 0 {
 			fmt.Printf("0x%X\n", key)
 			switch key {
 			case keyboard.KeyHome:
@@ -135,16 +133,16 @@ func Menu(prompt PromptFunc,
 				continue
 			case keyboard.KeyArrowUp:
 				if index == 0 {
-					index = len(items) - 1
+					index = len(items) - 2
 				} else {
 					index--
 				}
 				continue
 			case keyboard.KeyEnd:
-				index = len(items) - 1
+				index = len(items) - 2
 				continue
 			case keyboard.KeyArrowDown:
-				if index == len(items)-1 {
+				if index == len(items)-2 {
 					index = 0
 				} else {
 					index++
@@ -156,29 +154,23 @@ func Menu(prompt PromptFunc,
 		}
 		index = -1
 		ok := false
-	doit:
-		for i, item := range items {
-			rs := []rune(item(i)) //get menu item
-			if len(rs) < 1 {
+	run:
+		for i, item := range items[1:] {
+			s := item(i, def)
+			switch s {
+			case "":
 				continue
+			case EXIT:
+				break exit
 			}
-			if rs[0] == mark { //ignore mark from item
-				if len(rs) < 2 {
-					continue
-				}
-				rs = rs[1:]
-			}
-			ok = def == rs[0]
-			if ok {
-				if len(item(RunFunc)) > 0 { // run func of menu item
-					return // for once selected menu
-				}
-				break doit
-			}
+			def = []rune(s)[0]
+			ok = true
+			break run
 		}
 		if exitOnTypo && !ok {
-			return
+			break exit
 		}
+		// on exit
 	}
 }
 
@@ -199,7 +191,7 @@ func IsAnsi() (ok bool) {
 		"powershell.exe",
 		"ansicon.exe",
 		"conemuc.exe"} {
-		ok = strings.ToLower(parent.Executable()) == exe
+		ok = strings.EqualFold(parent.Executable(), exe)
 		if ok {
 			break
 		}

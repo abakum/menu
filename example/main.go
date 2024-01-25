@@ -2,69 +2,93 @@ package main
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/abakum/menu"
 )
 
 func main() {
 	fmt.Println("\nSimple print menu\n with index start from 0\n preselected 1\n static prompt\n exit on typo")
-	items := []menu.ItemFunc{}
-	items = append(items, func(index int) string {
-		if index == menu.RunFunc {
-			fmt.Println("foo") // simple print choose
-			return ""
+	items := []menu.MenuFunc{menu.Prompt}
+	items = append(items, func(index int, pressed rune) string {
+		r := rune('0' + index)
+		switch pressed {
+		case menu.ITEM: // item of menu
+			return fmt.Sprintf("%c) %s", r, "foo")
+		case r:
+			fmt.Println("foo") // run
+			return string(r)   //new def
 		}
-		return fmt.Sprintf("%d) %s", index, "foo") // print item of menu
+		return "" // not for me
 	})
-	items = append(items, func(index int) string {
-		if index == menu.RunFunc {
-			fmt.Println("bar") // simple print choose
-			return ""
+	items = append(items, func(index int, pressed rune) string {
+		r := rune('0' + index)
+		switch pressed {
+		case menu.ITEM: // print item of menu
+			return fmt.Sprintf("%c) %s", r, "bar")
+		case r:
+			fmt.Println("bar") // run
+			return string(r)
 		}
-		return fmt.Sprintf("%d) %s", index, "bar") // print item of menu
+		return "" // not for me
 	})
-	menu.Menu(menu.Prompt, menu.MARK, '1', false, true, items...)
+	menu.Menu('1', false, true, items...)
 
-	fmt.Println("\n\n\nPrint menu\n with index start from 1\n preselected by items\n not static prompt\n not exit on typo\n exit on `bar`\n with custom `mark`")
-	items = []menu.ItemFunc{}
-	items = append(items, func(index int) string {
-		if index == menu.RunFunc {
-			fmt.Println("foo") // simple print choose
-			return ""
+	fmt.Println("\n\n\nPrint menu\n with index start from 1\n preselected by items\n not static prompt\n not exit on typo\n exit on `bar`")
+	items = []menu.MenuFunc{func(index int, pressed rune) string {
+		return fmt.Sprintf("Press %c", pressed)
+	}}
+	items = append(items, func(index int, pressed rune) string {
+		r := rune('1' + index)
+		switch pressed {
+		case menu.MARKED: // marked
+			if menu.IsAnsi() {
+				return menu.MARK
+			}
+		case menu.ITEM: // item of menu
+			return fmt.Sprintf("%c) %s", r, "foo")
+		case r:
+			fmt.Println("foo") // run
+			return string(r)
 		}
+		return "" // not for me
+	})
+	items = append(items, func(index int, pressed rune) string {
+		r := rune('1' + index)
+		switch pressed {
+		case menu.ITEM: // print item of menu
+			return fmt.Sprintf("%c) %s", r, "bar")
+		case r:
+			fmt.Println("bar") // run
+			return menu.EXIT
+		}
+		return "" // not for me
+	})
+	menu.Menu(0, false, true, items...)
 
-		mark := ""
-		if menu.IsAnsi() {
-			mark = ">"
+	fmt.Println("\n\n\nPrint menu\n selected by cyrillic letters with typo tolerant\n first run `foo`\n not exit on typo")
+	items = []menu.MenuFunc{menu.Prompt}
+	items = append(items, func(index int, pressed rune) string {
+		r := rune('Ю' + index)
+		switch {
+		case pressed == menu.ITEM: // item of menu
+			return fmt.Sprintf("%c) %s", r, "foo")
+		case strings.EqualFold(string(r), string(pressed)) || pressed == '>' || pressed == '.':
+			fmt.Println("foo") // run
+			return string(r)
 		}
-		return fmt.Sprintf("%s%d) %s", mark, index+1, "foo") // print item of menu
+		return "" // not for me
 	})
-	items = append(items, func(index int) string {
-		if index == menu.RunFunc {
-			fmt.Println("bar") // simple print choose
-			return "exit"      // and exit if return not emty string
+	items = append(items, func(index int, pressed rune) string {
+		r := rune('Ю' + index)
+		switch {
+		case pressed == menu.ITEM: // item of menu
+			return fmt.Sprintf("%c) %s", r, "bar")
+		case strings.EqualFold(string(r), string(pressed)) || strings.EqualFold("z", string(pressed)):
+			fmt.Println("bar") // run
+			return string(r)
 		}
-		return fmt.Sprintf("%d) %s", index+1, "bar") // print item of menu
+		return "" // not for me
 	})
-	menu.Menu(func(index int, def rune) string {
-		return fmt.Sprintf("Press %s for %s", string(def), items[index](index))
-	}, '>', 0, false, false, items...)
-
-	fmt.Println("\n\n\nPrint menu\n selected by cyrillic letters\n first run `foo`\n not exit on typo")
-	items = []menu.ItemFunc{}
-	items = append(items, func(index int) string {
-		if index == menu.RunFunc {
-			fmt.Println("foo") // simple print choose
-			return ""
-		}
-		return fmt.Sprintf("%c) %s", 'Ю'+index, "foo") // print item of menu
-	})
-	items = append(items, func(index int) string {
-		if index == menu.RunFunc {
-			fmt.Println("bar") // simple print choose
-			return ""
-		}
-		return fmt.Sprintf("%c) %s", 'Ю'+index, "bar") // print item of menu
-	})
-	menu.Menu(menu.Prompt, menu.MARK, 'Ю', true, false, items...)
+	menu.Menu('Ю', true, false, items...)
 }
