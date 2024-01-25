@@ -35,6 +35,7 @@ import (
 
 	"github.com/eiannone/keyboard"
 	"github.com/mitchellh/go-ps"
+	"golang.org/x/sys/windows"
 )
 
 const (
@@ -209,10 +210,12 @@ func IsAnsi() (ok bool) {
 		fmt.Println(BUG, err)
 		return
 	}
-	for _, exe := range []string{
-		"powershell.exe",
-		"ansicon.exe",
-		"conemuc.exe"} {
+	ma, mi, _ := windows.RtlGetNtVersionNumbers()
+	ae := []string{"ansicon.exe", "conemuc.exe"}
+	if ma*10+mi > 61 { // after win7
+		ae = append(ae, "powershell.exe")
+	}
+	for _, exe := range ae {
 		ok = strings.EqualFold(parent.Executable(), exe)
 		if ok {
 			break
