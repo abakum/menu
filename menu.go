@@ -6,6 +6,23 @@ go get github.com/eiannone/keyboard@latest
 go get github.com/mitchellh/go-ps@latest
 
 go mod tidy
+
+// usage
+func main() {
+ 	items := []menu.MenuFunc{menu.Prompt}
+	items = append(items, func(index int, pressed rune) string {
+		r := rune('1' + index) // menu starts with 1)
+		switch pressed {
+		case menu.ITEM: // item of menu
+			return fmt.Sprintf("%c) %s", r, "foo")
+		case r:
+			foo() // run
+			return string(r)   //new def
+		}
+		return "" // not for me
+	})
+	menu.Menu('1', false, true, items...)
+}
 */
 
 package menu
