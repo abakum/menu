@@ -52,8 +52,8 @@ type (
 )
 
 var (
-	Bug = BUG
-	Gt  = GT
+	bug = BUG
+	gt  = GT
 )
 
 // helper for static prompt
@@ -65,7 +65,7 @@ func Prompt(index int, def rune) string {
 func Menu(def rune, // preselected item of menu
 	keyEnter, // first run preselected menu item
 	exitOnTypo bool, // exit from menu on typo
-	items ...MenuFunc, //first item must be Prompt like
+	items ...MenuFunc, // first item must be `Prompt` like
 ) {
 	const (
 		ansiReset     = "\u001B[0m"
@@ -80,8 +80,8 @@ func Menu(def rune, // preselected item of menu
 		mark    string
 	)
 	if os.Getenv("NO_COLOR") == "" && IsAnsi() {
-		Bug = ansiRedBGBold + BUG + ansiReset
-		Gt = ansiGreenFG + GT + ansiReset
+		bug = ansiRedBGBold + BUG + ansiReset
+		gt = ansiGreenFG + GT + ansiReset
 	}
 exit:
 	for {
@@ -115,8 +115,11 @@ exit:
 			if len(rs) < 1 {
 				continue
 			}
+			if def == 0 { //if def empty then select first item of menu
+				def = rs[0]
+			}
 			if def == rs[0] {
-				mark = Gt
+				mark = gt
 				index = i
 			} else {
 				mark = item(i, MARKED)
@@ -127,13 +130,13 @@ exit:
 
 			fmt.Printf("%s%s\n", mark, string(rs))
 		}
-		fmt.Print(items[0](index, def), Gt)
+		fmt.Print(items[0](index, def), gt)
 		if keyEnter {
 			pressed = def
 		} else {
 			pressed, key, err = keyboard.GetSingleKey()
 			if err != nil {
-				fmt.Println(Bug)
+				fmt.Println(bug)
 				return
 			}
 			if key == keyboard.KeyEnter {
@@ -145,6 +148,8 @@ exit:
 		if pressed == 0 {
 			fmt.Printf("0x%X\n", key)
 			switch key {
+			case keyboard.KeyEsc:
+				break exit
 			case keyboard.KeyHome:
 				index = 0
 				continue
@@ -180,7 +185,7 @@ exit:
 			case EXIT:
 				break exit
 			}
-			def = []rune(s)[0]
+			def = []rune(s)[0] // allow item channge next def
 			ok = true
 			break run
 		}

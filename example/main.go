@@ -70,10 +70,11 @@ func main() {
 	items = []menu.MenuFunc{menu.Prompt}
 	items = append(items, func(index int, pressed rune) string {
 		r := rune('Ю' + index)
+		alt := rune('1' + index)
 		switch {
 		case pressed == menu.ITEM: // item of menu
 			return fmt.Sprintf("%c) %s", r, "foo")
-		case strings.EqualFold(string(r), string(pressed)) || pressed == '>' || pressed == '.':
+		case strings.EqualFold(string(r), string(pressed)) || pressed == '>' || pressed == '.' || pressed == alt:
 			fmt.Println("foo") // run
 			return string(r)
 		}
@@ -81,10 +82,11 @@ func main() {
 	})
 	items = append(items, func(index int, pressed rune) string {
 		r := rune('Ю' + index)
+		alt := rune('1' + index)
 		switch {
 		case pressed == menu.ITEM: // item of menu
 			return fmt.Sprintf("%c) %s", r, "bar")
-		case strings.EqualFold(string(r), string(pressed)) || strings.EqualFold("z", string(pressed)):
+		case strings.EqualFold(string(r), string(pressed)) || strings.EqualFold("z", string(pressed)) || pressed == alt:
 			fmt.Println("bar") // run
 			return string(r)
 		}
