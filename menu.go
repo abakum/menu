@@ -6,26 +6,6 @@ go get github.com/eiannone/keyboard@latest
 go get github.com/mitchellh/go-ps@latest
 
 go mod tidy
-
-// usage
-func main() {
- 	items := []menu.MenuFunc{menu.Prompt}
-	items = append(items, func(index int, pressed rune) string {
-		r := rune('1' + index) // menu starts with 1)
-		switch pressed {
-		case r:
-			foo() // run
-			if exit {
-				return menu.EXIT
-			}
-			return string(r) //new def
-		case menu.ITEM: // item of menu
-			return fmt.Sprintf("%c) %s", r, "foo")
-		}
-		return "" // not for me
-	})
-	menu.Menu('1', false, true, items...)
-}
 */
 
 package menu
@@ -70,6 +50,28 @@ func Prompt(int, rune) string {
 func (s Static) Prompt(int, rune) string {
 	return string(s)
 }
+
+/*
+// template of helper for fooBar(anys...)
+func fooBarMenu(index int, pressed rune, pref rune, suf string, marked, exit bool, anys ...any) string {
+	r := rune(int(pref) + index)
+	switch pressed {
+	case r:
+		fooBar(anys...)
+		if exit {
+			return menu.EXIT
+		}
+		return string(r)
+	case menu.ITEM:
+		return fmt.Sprintf("%c) %s", r, suf)
+	case menu.MARKED:
+		if marked {
+			return menu.MARK
+		}
+	}
+	return ""
+}
+*/
 
 // Console menu
 func Menu(def rune, // preselected item of menu
@@ -160,7 +162,7 @@ exit:
 		if pressed == 0 {
 			fmt.Printf("0x%X\n", key)
 			switch key {
-			case keyboard.KeyEsc:
+			case keyboard.KeyEsc: // KeyEsc not typo
 				break exit
 			case keyboard.KeyHome:
 				index = 0
