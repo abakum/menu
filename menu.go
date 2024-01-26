@@ -13,11 +13,14 @@ func main() {
 	items = append(items, func(index int, pressed rune) string {
 		r := rune('1' + index) // menu starts with 1)
 		switch pressed {
-		case menu.ITEM: // item of menu
-			return fmt.Sprintf("%c) %s", r, "foo")
 		case r:
 			foo() // run
-			return string(r)   //new def
+			if exit {
+				return menu.EXIT
+			}
+			return string(r) //new def
+		case menu.ITEM: // item of menu
+			return fmt.Sprintf("%c) %s", r, "foo")
 		}
 		return "" // not for me
 	})
@@ -39,8 +42,8 @@ import (
 )
 
 const (
-	SELECT = "Select"
-	MARK   = "(" // default option selected rune
+	SELECT = "Select" // for Prompt()
+	MARK   = "("      // default option selected rune
 	BUG    = "Ж"
 	GT     = ">"
 	MARKED = -1
@@ -50,6 +53,7 @@ const (
 
 type (
 	MenuFunc func(int, rune) string
+	Static   string
 )
 
 var (
@@ -57,9 +61,14 @@ var (
 	gt  = GT
 )
 
-// helper for static prompt
-func Prompt(index int, def rune) string {
+// helper for prompt `Select`
+func Prompt(int, rune) string {
 	return SELECT
+}
+
+// helper for static prompt
+func (s Static) Prompt(int, rune) string {
+	return string(s)
 }
 
 // Console menu
@@ -80,18 +89,20 @@ func Menu(def rune, // preselected item of menu
 		index   = -1
 		mark    string
 	)
-	if os.Getenv("NO_COLOR") == "" && IsAnsi() {
+	if IsColor() {
 		bug = ansiRedBGBold + BUG + ansiReset
 		gt = ansiGreenFG + GT + ansiReset
 	}
 exit:
 	for {
 		// set def by index. Used for arrow key navigation
-		if index > -1 && index < len(items) {
+		if index > -1 {
 			def = 0
-			rs := []rune(items[index+1](index, ITEM))
-			if len(rs) > 0 {
-				def = rs[0]
+			if index < len(items) {
+				rs := []rune(items[index+1](index, ITEM))
+				if len(rs) > 0 {
+					def = rs[0]
+				}
 			}
 		}
 		if def == 0 {
@@ -222,4 +233,9 @@ func IsAnsi() (ok bool) {
 		}
 	}
 	return
+}
+
+// is console color enable
+func IsColor() bool {
+	return os.Getenv("NO_COLOR") == "" && IsAnsi()
 }
