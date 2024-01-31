@@ -4,6 +4,7 @@ go mod init github.com/abakum/menu
 
 go get github.com/eiannone/keyboard@latest
 go get github.com/mitchellh/go-ps@latest
+go get github.com/mattn/go-colorable@latest
 
 go mod tidy
 */
@@ -12,11 +13,13 @@ package menu
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"runtime"
 	"strings"
 
 	"github.com/eiannone/keyboard"
+	"github.com/mattn/go-colorable"
 	"github.com/mitchellh/go-ps"
 	"golang.org/x/sys/windows"
 )
@@ -90,8 +93,12 @@ func Menu(def rune, // preselected item of menu
 		pressed rune
 		index   = -1
 		mark    string
+		out     io.Writer = os.Stdout
 	)
 	if IsColor() {
+		if !IsAnsi() {
+			out = colorable.NewColorableStdout()
+		}
 		bug = ansiRedBGBold + BUG + ansiReset
 		gt = ansiGreenFG + GT + ansiReset
 	}
@@ -122,7 +129,7 @@ exit:
 		}
 
 		//print menu
-		fmt.Println()
+		fmt.Fprintln(out)
 		index = -1
 		for i, item := range items[1:] {
 			rs := []rune(item(i, ITEM)) //get menu item
@@ -142,15 +149,15 @@ exit:
 				mark = " "
 			}
 
-			fmt.Printf("%s%s\n", mark, string(rs))
+			fmt.Fprintf(out, "%s%s\n", mark, string(rs))
 		}
-		fmt.Print(items[0](index, def), gt)
+		fmt.Fprint(out, items[0](index, def), gt)
 		if keyEnter {
 			pressed = def
 		} else {
 			pressed, key, err = keyboard.GetSingleKey()
 			if err != nil {
-				fmt.Println(bug)
+				fmt.Fprintln(out, bug)
 				return
 			}
 			if key == keyboard.KeyEnter {
@@ -160,7 +167,7 @@ exit:
 		keyEnter = false
 		def = pressed
 		if pressed == 0 {
-			fmt.Printf("0x%X\n", key)
+			fmt.Fprintf(out, "0x%X\n", key)
 			switch key {
 			case keyboard.KeyEsc: // KeyEsc not typo
 				break exit
@@ -186,7 +193,7 @@ exit:
 				continue
 			}
 		} else {
-			fmt.Printf("%c\n", def)
+			fmt.Fprintf(out, "%c\n", def)
 		}
 		index = -1
 		ok := false
@@ -237,7 +244,7 @@ func IsAnsi() (ok bool) {
 	return
 }
 
-// is console color enable
+// is color wanted
 func IsColor() bool {
-	return os.Getenv("NO_COLOR") == "" && IsAnsi()
+	return os.Getenv("NO_COLOR") == ""
 }
