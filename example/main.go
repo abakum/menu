@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/abakum/menu"
 )
@@ -108,4 +109,5 @@ Print menu
 		})
 	})
 	menu.Menu('Ю', true, false, items...)
+	menu.PressAnyKey("Press Any Key", time.Second*3)
 }

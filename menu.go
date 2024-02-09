@@ -17,6 +17,7 @@ import (
 	"os"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/eiannone/keyboard"
 	"github.com/mattn/go-colorable"
@@ -25,23 +26,21 @@ import (
 )
 
 const (
-	SELECT = "Select" // for Prompt()
-	MARK   = "("      // default option selected rune
-	BUG    = "Ж"
-	GT     = ">"
-	MARKED = -1
-	ITEM   = -2
-	EXIT   = "\x00"
+	SELECT            = "Select" // for Prompt()
+	MARK              = "("      // default option selected rune
+	BUG               = "Ж"
+	GT                = ">"
+	MARKED            = -1
+	ITEM              = -2
+	EXIT              = "\x00"
+	NormalText        = "\033[0m"
+	BoldGreenText     = "\033[1;32m"
+	BoldRedBackground = "\033[1;41m"
 )
 
 type (
 	MenuFunc func(int, rune) string
 	Static   string
-)
-
-var (
-	bug = BUG
-	gt  = GT
 )
 
 // helper for prompt `Select`
@@ -82,26 +81,15 @@ func Menu(def rune, // preselected item of menu
 	exitOnTypo bool, // exit from menu on typo
 	items ...MenuFunc, // first item must be `Prompt` like
 ) {
-	const (
-		ansiReset     = "\u001B[0m"
-		ansiRedBGBold = "\u001B[41m\u001B[1m"
-		ansiGreenFG   = "\u001B[32m\u001B[1m"
-	)
 	var (
 		key     keyboard.Key
 		err     error
 		pressed rune
 		index   = -1
 		mark    string
-		out     io.Writer = os.Stdout
 	)
-	if IsColor() {
-		if !IsAnsi() {
-			out = colorable.NewColorableStdout()
-		}
-		bug = ansiRedBGBold + BUG + ansiReset
-		gt = ansiGreenFG + GT + ansiReset
-	}
+	bug, gt := BugGt()
+	out := ColorableStdout()
 exit:
 	for {
 		// set def by index. Used for arrow key navigation
@@ -247,4 +235,42 @@ func IsAnsi() (ok bool) {
 // is color wanted
 func IsColor() bool {
 	return os.Getenv("NO_COLOR") == ""
+}
+
+func BugGt() (bug, gt string) {
+	if !IsColor() {
+		return BUG, GT
+	}
+	return BoldRedBackground + BUG + NormalText, BoldGreenText + GT + NormalText
+}
+
+func ColorableStdout() io.Writer {
+	if IsColor() && !IsAnsi() {
+		return colorable.NewColorableStdout()
+	}
+	return os.Stdout
+}
+
+func PressAnyKey(s string, d time.Duration) {
+	parent, err := ps.FindProcess(os.Getppid())
+	if err == nil {
+		for _, exe := range []string{"powershell.exe", "conemuc.exe", "cmd.exe"} {
+			if strings.EqualFold(parent.Executable(), exe) {
+				return
+			}
+		}
+	}
+	if d > 0 {
+		time.AfterFunc(d, func() {
+			keyboard.Close()
+		})
+	}
+	bug, gt := BugGt()
+	out := ColorableStdout()
+	fmt.Fprint(out, s, gt)
+	_, _, err = keyboard.GetSingleKey()
+	if err != nil {
+		fmt.Fprint(out, bug)
+	}
+	fmt.Fprintln(out)
 }
