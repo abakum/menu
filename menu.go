@@ -237,6 +237,7 @@ func IsColor() bool {
 }
 
 func BugGtOut() (string, string, io.Writer) {
+
 	if !IsColor() {
 		return BUG, GT, os.Stdout
 	}
