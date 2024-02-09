@@ -88,8 +88,7 @@ func Menu(def rune, // preselected item of menu
 		index   = -1
 		mark    string
 	)
-	bug, gt := BugGt()
-	out := ColorableStdout()
+	bug, gt, out := BugGtOut()
 exit:
 	for {
 		// set def by index. Used for arrow key navigation
@@ -237,18 +236,14 @@ func IsColor() bool {
 	return os.Getenv("NO_COLOR") == ""
 }
 
-func BugGt() (bug, gt string) {
+func BugGtOut() (string, string, io.Writer) {
 	if !IsColor() {
-		return BUG, GT
+		return BUG, GT, os.Stdout
 	}
-	return BoldRedBackground + BUG + NormalText, BoldGreenText + GT + NormalText
-}
-
-func ColorableStdout() io.Writer {
-	if IsColor() && !IsAnsi() {
-		return colorable.NewColorableStdout()
+	if IsAnsi() {
+		return BoldRedBackground + BUG + NormalText, BoldGreenText + GT + NormalText, os.Stdout
 	}
-	return os.Stdout
+	return BoldRedBackground + BUG + NormalText, BoldGreenText + GT + NormalText, colorable.NewColorableStdout()
 }
 
 func PressAnyKey(s string, d time.Duration) {
@@ -265,8 +260,7 @@ func PressAnyKey(s string, d time.Duration) {
 			keyboard.Close()
 		})
 	}
-	bug, gt := BugGt()
-	out := ColorableStdout()
+	bug, gt, out := BugGtOut()
 	fmt.Fprint(out, s, gt)
 	_, _, err = keyboard.GetSingleKey()
 	if err != nil {
