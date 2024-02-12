@@ -20,22 +20,21 @@ import (
 	"time"
 
 	"github.com/eiannone/keyboard"
+	"github.com/fatih/color"
 	"github.com/mattn/go-colorable"
+	"github.com/mattn/go-isatty"
 	"github.com/mitchellh/go-ps"
 	"golang.org/x/sys/windows"
 )
 
 const (
-	SELECT            = "Select" // for Prompt()
-	MARK              = "("      // default option selected rune
-	BUG               = "Ж"
-	GT                = ">"
-	MARKED            = -1
-	ITEM              = -2
-	EXIT              = "\x00"
-	NormalText        = "\033[0m"
-	BoldGreenText     = "\033[1;32m"
-	BoldRedBackground = "\033[1;41m"
+	SELECT = "Select" // for Prompt()
+	MARK   = "("      // default option selected rune
+	BUG    = "Ж"
+	GT     = ">"
+	MARKED = -1
+	ITEM   = -2
+	EXIT   = "\x00"
 )
 
 type (
@@ -209,7 +208,8 @@ func IsAnsi() (ok bool) {
 	if runtime.GOOS != "windows" {
 		return true
 	}
-	if os.Getenv("ANSICON") != "" {
+	// windows
+	if os.Getenv("ANSICON") != "" || isatty.IsCygwinTerminal(os.Stdout.Fd()) {
 		return true
 	}
 	parent, err := ps.FindProcess(os.Getppid())
@@ -231,20 +231,27 @@ func IsAnsi() (ok bool) {
 	return
 }
 
-// is color wanted
-func IsColor() bool {
-	return os.Getenv("NO_COLOR") == ""
+// no color need
+func NoColor() bool {
+	return os.Getenv("NO_COLOR") != "" ||
+		os.Getenv("TERM") == "dumb" ||
+		!isatty.IsTerminal(os.Stdout.Fd())
 }
 
-func BugGtOut() (string, string, io.Writer) {
+// get color dependents
+func BugGtOut() (bug string, gt string, Stdout io.Writer) {
+	bug, gt, Stdout = BUG, GT, os.Stdout
+	if NoColor() {
+		return
+	}
+	bug = fmt.Sprintf("\033[%d;%dm%s\033[%dm", color.Bold, color.BgRed, BUG, color.Reset)
+	gt = fmt.Sprintf("\033[%d;%dm%s\033[%dm", color.Bold, color.FgGreen, GT, color.Reset)
 
-	if !IsColor() {
-		return BUG, GT, os.Stdout
-	}
 	if IsAnsi() {
-		return BoldRedBackground + BUG + NormalText, BoldGreenText + GT + NormalText, os.Stdout
+		return
 	}
-	return BoldRedBackground + BUG + NormalText, BoldGreenText + GT + NormalText, colorable.NewColorableStdout()
+	Stdout = colorable.NewColorableStdout()
+	return
 }
 
 func PressAnyKey(s string, d time.Duration) {
