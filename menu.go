@@ -211,7 +211,7 @@ func NoColor() bool {
 		os.Getenv("NO_COLOR") != "" ||
 		os.Getenv("TERM") == "dumb" ||
 		os.Getenv("TERM") == "xterm-mono" ||
-		!isatty.IsTerminal(os.Stdout.Fd()) ||
+		!isatty.IsTerminal(Std.Fd()) ||
 		false
 }
 
