@@ -207,9 +207,12 @@ exit:
 
 // no color need
 func NoColor() bool {
-	return os.Getenv("NO_COLOR") != "" ||
+	return false ||
+		os.Getenv("NO_COLOR") != "" ||
 		os.Getenv("TERM") == "dumb" ||
-		!isatty.IsTerminal(Std.Fd())
+		os.Getenv("TERM") == "xterm-mono" ||
+		!isatty.IsTerminal(os.Stdout.Fd()) ||
+		false
 }
 
 // get color dependents
