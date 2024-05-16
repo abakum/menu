@@ -59,7 +59,8 @@ Simple print menu
  with index start from 0
  preselected 1
  static prompt
- exit on typo`)
+ exit on typo
+ exit on Esc`)
 	items := []menu.MenuFunc{menu.Static("Choose").Prompt}
 	items = append(items, func(index int, pressed rune) string {
 		return fooBarMenu(index, pressed, '0', "foo", false, false)
@@ -76,7 +77,8 @@ Print menu
  preselected by items
  not static prompt
  not exit on typo
- exit on "bar"`)
+ exit on "bar"
+ exit on Esc`)
 	items = []menu.MenuFunc{func(index int, pressed rune) string {
 		if index == -1 || pressed == 0 {
 			return menu.SELECT
@@ -96,7 +98,8 @@ Print menu
 Print menu
  selected by cyrillic letters with typo tolerant
  first run "foo"
- not exit on typo`)
+ not exit on typo
+ exit on Esc`)
 	items = []menu.MenuFunc{menu.Prompt}
 	items = append(items, func(index int, pressed rune) string {
 		return fooBarAltMenu(index, pressed, 'Ю', "foo", false, false, func(pressed rune) bool {
@@ -109,5 +112,5 @@ Print menu
 		})
 	})
 	menu.Menu('Ю', true, false, items...)
-	menu.PressAnyKey("Press Any Key", time.Second*3)
+	menu.PressAnyKey("Press Any Key", time.Second*7)
 }

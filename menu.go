@@ -15,7 +15,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"runtime"
 	"strings"
 	"time"
 
@@ -24,7 +23,6 @@ import (
 	"github.com/mattn/go-colorable"
 	"github.com/mattn/go-isatty"
 	"github.com/mitchellh/go-ps"
-	"golang.org/x/sys/windows"
 )
 
 const (
@@ -40,6 +38,10 @@ const (
 type (
 	MenuFunc func(int, rune) string
 	Static   string
+)
+
+var (
+	Std = os.Stderr
 )
 
 // helper for prompt `Select`
@@ -203,44 +205,16 @@ exit:
 	}
 }
 
-// for old windows `choco install ansicon`
-func IsAnsi() (ok bool) {
-	if runtime.GOOS != "windows" {
-		return true
-	}
-	// windows
-	if os.Getenv("ANSICON") != "" || isatty.IsCygwinTerminal(os.Stdout.Fd()) {
-		return true
-	}
-	parent, err := ps.FindProcess(os.Getppid())
-	if err != nil {
-		fmt.Println(BUG, err)
-		return
-	}
-	ma, mi, _ := windows.RtlGetNtVersionNumbers()
-	ae := []string{"ansicon.exe", "conemuc.exe"}
-	if ma*10+mi > 61 { // after win7
-		ae = append(ae, "powershell.exe")
-	}
-	for _, exe := range ae {
-		ok = strings.EqualFold(parent.Executable(), exe)
-		if ok {
-			break
-		}
-	}
-	return
-}
-
 // no color need
 func NoColor() bool {
 	return os.Getenv("NO_COLOR") != "" ||
 		os.Getenv("TERM") == "dumb" ||
-		!isatty.IsTerminal(os.Stdout.Fd())
+		!isatty.IsTerminal(Std.Fd())
 }
 
 // get color dependents
-func BugGtOut() (bug string, gt string, Stdout io.Writer) {
-	bug, gt, Stdout = BUG, GT, os.Stdout
+func BugGtOut() (bug string, gt string, std io.Writer) {
+	bug, gt, std = BUG, GT, Std
 	if NoColor() {
 		return
 	}
@@ -250,7 +224,7 @@ func BugGtOut() (bug string, gt string, Stdout io.Writer) {
 	if IsAnsi() {
 		return
 	}
-	Stdout = colorable.NewColorableStdout()
+	std = colorable.NewColorable(Std)
 	return
 }
 
