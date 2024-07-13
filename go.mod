@@ -1,6 +1,6 @@
 module github.com/abakum/menu
 
-go 1.21.4
+go 1.21
 
 require (
 	github.com/eiannone/keyboard v0.0.0-20220611211555-0d226195f203
