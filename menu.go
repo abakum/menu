@@ -18,12 +18,15 @@ import (
 	"strings"
 	"time"
 
+	version "github.com/abakum/version/lib"
 	"github.com/eiannone/keyboard"
 	"github.com/fatih/color"
 	"github.com/mattn/go-colorable"
 	"github.com/mattn/go-isatty"
 	"github.com/mitchellh/go-ps"
 )
+
+var _ = version.Ver
 
 //go:generate go run github.com/abakum/version
 

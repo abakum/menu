@@ -3,6 +3,7 @@ module github.com/abakum/menu
 go 1.21
 
 require (
+	github.com/abakum/version v0.1.4-lw
 	github.com/eiannone/keyboard v0.0.0-20220611211555-0d226195f203
 	github.com/fatih/color v1.16.0
 	github.com/mattn/go-colorable v0.1.13
