@@ -25,6 +25,8 @@ import (
 	"github.com/mitchellh/go-ps"
 )
 
+//go:generate go run github.com/abakum/version
+
 const (
 	SELECT = "Select" // for Prompt()
 	MARK   = "("      // default option selected rune
@@ -211,7 +213,7 @@ func NoColor() bool {
 		os.Getenv("NO_COLOR") != "" ||
 		os.Getenv("TERM") == "dumb" ||
 		os.Getenv("TERM") == "xterm-mono" ||
-		!isatty.IsTerminal(Std.Fd()) ||
+		!isatty.IsTerminal(Std.Fd()) && !isatty.IsCygwinTerminal(Std.Fd()) ||
 		false
 }
 
